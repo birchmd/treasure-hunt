@@ -32,7 +32,7 @@ impl Clues {
     }
 }
 
-fn answer_to_code(answer: &str) -> [u8; 32] {
+pub fn answer_to_code(answer: &str) -> [u8; 32] {
     let mut hasher = Sha3_256::new();
     hasher.update(answer.as_bytes());
     hasher.finalize().into()
