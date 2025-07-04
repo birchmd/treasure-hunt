@@ -10,6 +10,7 @@ pub struct ClueDefinition {
     pub poem: String,
     pub hint: String,
     pub item: String,
+    pub location: String,
     pub answer: String,
 }
 

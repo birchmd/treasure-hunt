@@ -3,6 +3,7 @@ use {
     std::{io, path::Path},
 };
 
+pub mod arrangement;
 mod on_disk;
 pub mod status;
 
@@ -11,7 +12,25 @@ pub struct Clue {
     pub poem: String,
     pub hint: String,
     pub item: String,
+    pub location: String,
     pub code: [u8; 32],
+}
+
+impl Clue {
+    #[cfg(test)]
+    pub fn mock(seed: u64, location: &'static str) -> Self {
+        let code = answer_to_code(&seed.to_string());
+        let poem = hex::encode(code);
+        let hint = poem.clone();
+        let item = poem.clone();
+        Self {
+            poem,
+            hint,
+            item,
+            location: location.into(),
+            code,
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -26,6 +45,7 @@ impl Clues {
                 poem: clue.poem,
                 hint: clue.hint,
                 item: clue.item,
+                location: clue.location,
                 code: answer_to_code(&clue.answer),
             });
         Ok(Self(clues.collect()))
