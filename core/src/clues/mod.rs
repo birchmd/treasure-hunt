@@ -50,6 +50,26 @@ impl Clues {
             });
         Ok(Self(clues.collect()))
     }
+
+    #[cfg(test)]
+    pub fn mock() -> Self {
+        Self(vec![
+            Clue::mock(0, "A"),
+            Clue::mock(1, "B"),
+            Clue::mock(2, "C"),
+            Clue::mock(3, "D"),
+            Clue::mock(4, "D"),
+            Clue::mock(5, "D"),
+            Clue::mock(6, "E"),
+            Clue::mock(7, "E"),
+            Clue::mock(8, "F"),
+            Clue::mock(9, "F"),
+            Clue::mock(10, "G"),
+            Clue::mock(11, "G"),
+            Clue::mock(12, "H"),
+            Clue::mock(13, "H"),
+        ])
+    }
 }
 
 pub fn answer_to_code(answer: &str) -> [u8; 32] {

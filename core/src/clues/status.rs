@@ -43,6 +43,14 @@ impl<'a> CurrentClueStatus<'a> {
         self.inner
     }
 
+    pub fn hinted(&mut self) {
+        self.kind().hinted();
+    }
+
+    pub fn revealed(&mut self) {
+        self.kind().revealed();
+    }
+
     pub fn skip(self) {
         match self.inner {
             Status::Seen { kind, time } => {
@@ -55,6 +63,18 @@ impl<'a> CurrentClueStatus<'a> {
                 // Skipping a clue a second time means you are giving up on it forever.
                 *self.inner = Status::Declined;
             }
+            _ => unreachable!(),
+        }
+    }
+
+    pub fn duration(mut self) -> Duration {
+        let (_, time) = self.unpack();
+        time.elapsed()
+    }
+
+    fn kind(&mut self) -> &mut KnowledgeKind {
+        match self.inner {
+            Status::Seen { kind, .. } | Status::Skipped { kind, .. } => kind,
             _ => unreachable!(),
         }
     }
@@ -76,6 +96,18 @@ pub enum KnowledgeKind {
 }
 
 impl KnowledgeKind {
+    pub fn hinted(&mut self) {
+        if matches!(self, Self::Unaided) {
+            *self = Self::WithHint;
+        }
+    }
+
+    pub fn revealed(&mut self) {
+        if matches!(self, Self::Unaided | Self::WithHint) {
+            *self = Self::KnowingItem;
+        }
+    }
+
     pub fn score(&self) -> i32 {
         match self {
             KnowledgeKind::Unaided => 300,
