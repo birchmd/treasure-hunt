@@ -4,11 +4,14 @@ use {
         status::{CurrentClueStatus, KnowledgeKind, Status},
     },
     rand::Rng,
-    std::time::{Duration, Instant},
+    std::{
+        fmt,
+        time::{Duration, Instant},
+    },
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct SessionId<const N: usize>(pub [u8; N]);
+pub struct SessionId<const N: usize>([u8; N]);
 
 impl<const N: usize> SessionId<N> {
     pub fn new(code: &str) -> Option<Self> {
@@ -16,7 +19,9 @@ impl<const N: usize> SessionId<N> {
             return None;
         }
 
-        Some(Self(code.as_bytes().try_into().unwrap()))
+        Some(Self(
+            code.to_ascii_uppercase().as_bytes().try_into().unwrap(),
+        ))
     }
 
     pub fn random() -> Self {
@@ -30,6 +35,13 @@ impl<const N: usize> SessionId<N> {
 
     fn validate_code(code: &str) -> bool {
         code.is_ascii() && code.len() == N
+    }
+}
+
+impl<const N: usize> fmt::Display for SessionId<N> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let s = str::from_utf8(&self.0).map_err(|_| fmt::Error)?;
+        write!(f, "{s}")
     }
 }
 

@@ -7,6 +7,8 @@ use {
     std::collections::{HashMap, HashSet, VecDeque},
 };
 
+pub type CluesGenerator = std::iter::Chain<<Vec<Clues> as IntoIterator>::IntoIter, RandomOrder>;
+
 pub struct Arrangements {
     inner: Vec<Clues>,
 }
@@ -90,20 +92,27 @@ impl Arrangements {
         }
     }
 
-    pub fn iterator(self) -> impl Iterator<Item = Clues> {
-        let mut rng = rand::rng();
-        let random_clues = {
-            let mut base = self.inner.first().unwrap().clone();
-            move || {
-                base.0.shuffle(&mut rng);
-                base.clone()
-            }
+    pub fn iterator(self) -> CluesGenerator {
+        let random_clues = RandomOrder {
+            base: self.inner.first().unwrap().clone(),
         };
 
         // Start with the known arrangements, then give random orders.
-        self.inner
-            .into_iter()
-            .chain(std::iter::repeat_with(random_clues))
+        self.inner.into_iter().chain(random_clues)
+    }
+}
+
+pub struct RandomOrder {
+    base: Clues,
+}
+
+impl Iterator for RandomOrder {
+    type Item = Clues;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let mut rng = rand::rng();
+        self.base.0.shuffle(&mut rng);
+        Some(self.base.clone())
     }
 }
 
