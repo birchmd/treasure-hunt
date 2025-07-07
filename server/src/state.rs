@@ -45,6 +45,19 @@ impl State {
                         response.send(id).ok();
                         self.sessions.insert(team_name, session);
                     }
+                    Command::Leaderboard { response } => {
+                        let mut rows = Vec::new();
+                        for (team_name, session) in &self.sessions {
+                            let score = session.total_score();
+                            let row = LeaderboardRow {
+                                team_name: team_name.clone(),
+                                score,
+                            };
+                            rows.push(row);
+                        }
+                        rows.sort_by_key(|r| -r.score);
+                        response.send(rows).ok();
+                    }
                 }
             }
         })
@@ -58,6 +71,15 @@ pub enum Command {
         team_name: TeamName,
         response: oneshot::Sender<SessionId<4>>,
     },
+    Leaderboard {
+        response: oneshot::Sender<Vec<LeaderboardRow>>,
+    },
+}
+
+#[derive(Debug)]
+pub struct LeaderboardRow {
+    pub team_name: TeamName,
+    pub score: i32,
 }
 
 #[derive(Debug, PartialEq, Eq, Clone, Hash)]

@@ -37,10 +37,13 @@ async fn main() {
 
     let state_task = state.spawn();
 
-    let app = Router::new().route(
-        "/",
-        get(register_form).post_service(Handler::<_, _>::with_state(do_register, sender)),
-    );
+    let app = Router::new()
+        .route(
+            "/",
+            get(register_form).post_service(do_register.with_state(sender.clone())),
+        )
+        .route("/leaderboard", get(show_leaderboard))
+        .with_state(sender);
     let bind_url = format!("0.0.0.0:{}", config.port);
     let listener = tokio::net::TcpListener::bind(bind_url).await.unwrap();
     axum::serve(listener, app).await.unwrap();
@@ -74,6 +77,29 @@ async fn do_register(
     }
 
     inner_register(sender, input)
+        .await
+        .unwrap_or_else(|e| Html(format!("An error occurred: {e:?}")))
+}
+
+async fn show_leaderboard(State(sender): State<mpsc::Sender<Command>>) -> Html<String> {
+    async fn inner_leaderboard(sender: mpsc::Sender<Command>) -> anyhow::Result<Html<String>> {
+        let (tx, rx) = oneshot::channel();
+        let command = Command::Leaderboard { response: tx };
+        sender.send(command).await?;
+        let rows = rx.await?;
+        let mut result = String::new();
+        result.push_str(include_str!("../html/leaderboard.html"));
+        result.push_str("<table>\n<tr><th>Team Name</th><th>Score</th></tr>\n");
+        for row in rows {
+            result.push_str(&format!(
+                "<tr><td>{}</td><td>{}</td></tr>\n",
+                row.team_name, row.score
+            ));
+        }
+        result.push_str("</table></body></html>");
+        Ok(Html(result))
+    }
+    inner_leaderboard(sender)
         .await
         .unwrap_or_else(|e| Html(format!("An error occurred: {e:?}")))
 }
