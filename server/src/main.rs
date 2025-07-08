@@ -1,5 +1,5 @@
 use {
-    self::{config::Config, state::Command},
+    self::{config::Config, state::command::Command},
     crate::state::TeamName,
     axum::{
         Router,
@@ -70,7 +70,7 @@ async fn do_register(
             response: tx,
         };
         sender.send(command).await?;
-        let id = rx.await?;
+        let id = rx.await??;
         Ok(Html(format!(
             "<html><head></head><body><h1>Welcome</h1><p>Welcome {raw_team_name}! Your session id is {id}.</p></body></html>"
         )))

@@ -10,10 +10,10 @@ use {
     },
 };
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct SessionId<const N: usize>([u8; N]);
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct GenericSessionId<const N: usize>([u8; N]);
 
-impl<const N: usize> SessionId<N> {
+impl<const N: usize> GenericSessionId<N> {
     pub fn new(code: &str) -> Option<Self> {
         if !Self::validate_code(code) {
             return None;
@@ -38,15 +38,17 @@ impl<const N: usize> SessionId<N> {
     }
 }
 
-impl<const N: usize> fmt::Display for SessionId<N> {
+impl<const N: usize> fmt::Display for GenericSessionId<N> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let s = str::from_utf8(&self.0).map_err(|_| fmt::Error)?;
         write!(f, "{s}")
     }
 }
 
+pub type SessionId = GenericSessionId<4>;
+
 pub struct Session {
-    pub id: SessionId<4>,
+    pub id: SessionId,
     clues: Vec<(Clue, Status)>,
     negative_points: i32,
 }

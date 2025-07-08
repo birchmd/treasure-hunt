@@ -1,7 +1,12 @@
 use {
+    self::command::Command,
     crate::config::Config,
-    std::{collections::HashMap, fmt, io, path::Path},
-    tokio::sync::{mpsc, oneshot},
+    std::{
+        collections::{HashMap, HashSet},
+        fmt, io,
+        path::Path,
+    },
+    tokio::sync::mpsc,
     treasure_hunt_core::{
         clues::{
             Clues,
@@ -11,8 +16,22 @@ use {
     },
 };
 
+pub mod command;
+
+pub struct TeamSession {
+    pub name: TeamName,
+    pub session: Session,
+}
+
+impl TeamSession {
+    pub fn new(name: TeamName, session: Session) -> Self {
+        Self { name, session }
+    }
+}
+
 pub struct State {
-    sessions: HashMap<TeamName, Session>,
+    sessions: HashMap<SessionId, TeamSession>,
+    team_names: HashSet<TeamName>,
     channel: mpsc::Receiver<Command>,
     clues: CluesGenerator,
 }
@@ -25,6 +44,7 @@ impl State {
         let (sender, channel) = mpsc::channel(config.state_channel_size);
         let state = Self {
             sessions: HashMap::new(),
+            team_names: HashSet::new(),
             channel,
             clues: iterator,
         };
@@ -38,48 +58,14 @@ impl State {
                     Command::NewSession {
                         team_name,
                         response,
-                    } => {
-                        let clues = self.clues.next().expect("The iterator is never empty");
-                        let session = Session::new(clues);
-                        let id = session.id;
-                        response.send(id).ok();
-                        self.sessions.insert(team_name, session);
-                    }
+                    } => command::new_session::handle(&mut self, team_name, response),
                     Command::Leaderboard { response } => {
-                        let mut rows = Vec::new();
-                        for (team_name, session) in &self.sessions {
-                            let score = session.total_score();
-                            let row = LeaderboardRow {
-                                team_name: team_name.clone(),
-                                score,
-                            };
-                            rows.push(row);
-                        }
-                        rows.sort_by_key(|r| -r.score);
-                        response.send(rows).ok();
+                        command::leader_board::handle(&self, response);
                     }
                 }
             }
         })
     }
-}
-
-/// Commands the app can send to the state
-#[derive(Debug)]
-pub enum Command {
-    NewSession {
-        team_name: TeamName,
-        response: oneshot::Sender<SessionId<4>>,
-    },
-    Leaderboard {
-        response: oneshot::Sender<Vec<LeaderboardRow>>,
-    },
-}
-
-#[derive(Debug)]
-pub struct LeaderboardRow {
-    pub team_name: TeamName,
-    pub score: i32,
 }
 
 #[derive(Debug, PartialEq, Eq, Clone, Hash)]
