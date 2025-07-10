@@ -7,8 +7,8 @@ use {
     tokio::sync::{mpsc, oneshot},
 };
 
-pub async fn form() -> Html<&'static str> {
-    Html(include_str!("../../html/register.html"))
+pub async fn form() -> Html<String> {
+    super::fill_body(include_str!("../../html/register_form.html"))
 }
 
 pub async fn action(
@@ -28,9 +28,9 @@ pub async fn action(
         };
         sender.send(command).await?;
         let id = rx.await??;
-        Ok(Html(format!(
-            "<html><head></head><body><h1>Welcome</h1><p>Welcome {raw_team_name}! Your session id is {id}.</p></body></html>"
-        )))
+        let html_body =
+            format!("<h1>Welcome</h1><p>Welcome {raw_team_name}! Your session id is {id}.</p>");
+        Ok(super::fill_body(&html_body))
     }
 
     inner_register(sender, input)

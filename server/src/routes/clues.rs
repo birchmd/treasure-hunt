@@ -47,7 +47,7 @@ pub async fn form(
         };
 
         // TODO: buttons for getting hints and submitting answer
-        Ok(Html(clue_text))
+        Ok(super::fill_body(&clue_text))
     }
 
     inner_clues_form(sender, &id)
