@@ -1,4 +1,5 @@
 use {
+    self::status::KnowledgeKind,
     sha3::{Digest, Sha3_256},
     std::{io, path::Path},
 };
@@ -69,6 +70,29 @@ impl Clues {
             Clue::mock(12, "H"),
             Clue::mock(13, "H"),
         ])
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ClueView {
+    pub clue: Clue,
+    pub knowledge: KnowledgeKind,
+    pub is_previously_skipped: bool,
+}
+
+impl ClueView {
+    pub fn new(clue: Clue, knowledge: KnowledgeKind, is_previously_skipped: bool) -> Self {
+        Self {
+            clue,
+            knowledge,
+            is_previously_skipped,
+        }
+    }
+
+    pub fn hinted(&mut self) {
+        if matches!(self.knowledge, KnowledgeKind::Unaided) {
+            self.knowledge = KnowledgeKind::WithHint;
+        }
     }
 }
 

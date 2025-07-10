@@ -4,13 +4,11 @@ use {
     },
     crate::state::TeamName,
     tokio::sync::oneshot,
-    treasure_hunt_core::{
-        clues::{Clue, status::KnowledgeKind},
-        session::SessionId,
-    },
+    treasure_hunt_core::{clues::ClueView, session::SessionId},
 };
 
 pub mod current_clue;
+pub mod hint;
 pub mod leader_board;
 pub mod new_session;
 
@@ -23,7 +21,10 @@ pub enum Command {
     },
     GetCurrentClue {
         id: SessionId,
-        response: oneshot::Sender<Result<Option<(Clue, KnowledgeKind)>, CurrentClueError>>,
+        response: oneshot::Sender<Result<Option<ClueView>, CurrentClueError>>,
+    },
+    HintCurrentClue {
+        id: SessionId,
     },
     Leaderboard {
         response: oneshot::Sender<Vec<LeaderboardRow>>,

@@ -1,6 +1,10 @@
 use {
     self::config::Config,
-    axum::{Router, handler::Handler, routing::get},
+    axum::{
+        Router,
+        handler::Handler,
+        routing::{get, post},
+    },
     tracing_subscriber::fmt::format::FmtSpan,
 };
 
@@ -38,6 +42,7 @@ async fn main() {
         )
         .route("/leaderboard", get(routes::leaderboard::action))
         .route("/clue/{id}", get(routes::clues::form))
+        .route("/hint/{session_id}/{clue_id}", post(routes::hint::action))
         .with_state(sender);
     let bind_url = format!("0.0.0.0:{}", config.port);
     let listener = tokio::net::TcpListener::bind(bind_url).await.unwrap();

@@ -5,7 +5,10 @@ use {
         response::Html,
     },
     tokio::sync::{mpsc, oneshot},
-    treasure_hunt_core::{clues::status::KnowledgeKind, session::SessionId},
+    treasure_hunt_core::{
+        clues::{ClueView, status::KnowledgeKind},
+        session::SessionId,
+    },
 };
 
 pub async fn form(
@@ -25,32 +28,54 @@ pub async fn form(
             response: tx,
         };
         sender.send(command).await?;
-        let maybe_clue = rx.await??;
-
-        let clue_text = match maybe_clue {
-            Some((clue, knowledge)) => {
-                let mut text = format!("<p>{}</p><br><br>", clue.poem);
-                if matches!(
-                    knowledge,
-                    KnowledgeKind::WithHint | KnowledgeKind::KnowingItem
-                ) {
-                    text.push_str(&format!("Hint: <p>{}</p><br><br>", clue.hint));
-                }
-                if matches!(knowledge, KnowledgeKind::KnowingItem) {
-                    text.push_str(&format!("Item to find: <p>{}</p><br><br>", clue.item));
-                }
-                text
-            }
-            None => {
-                return Ok(Html("TODO: All done page".into()));
-            }
+        let Some(clue_view) = rx.await?? else {
+            return Ok(no_more_clues());
         };
-
-        // TODO: buttons for getting hints and submitting answer
-        Ok(super::fill_body(&clue_text))
+        Ok(construct_clues_form(session_id, clue_view))
     }
 
     inner_clues_form(sender, &id)
         .await
         .unwrap_or_else(super::error_to_html)
+}
+
+pub fn construct_clues_form(session_id: SessionId, clue_view: ClueView) -> Html<String> {
+    let clue = clue_view.clue;
+    let knowledge = clue_view.knowledge;
+    let skip_text = if clue_view.is_previously_skipped {
+        "Skip forever"
+    } else {
+        "Skip for now"
+    };
+
+    let mut html_body = format!("<p>{}</p><br><br>\n", clue.poem);
+
+    if matches!(
+        knowledge,
+        KnowledgeKind::WithHint | KnowledgeKind::KnowingItem
+    ) {
+        html_body.push_str(&format!("Hint: <p>{}</p><br><br>\n", clue.hint));
+    }
+
+    if matches!(knowledge, KnowledgeKind::KnowingItem) {
+        html_body.push_str(&format!("Item to find: <p>{}</p><br><br>\n", clue.item));
+    }
+
+    if matches!(knowledge, KnowledgeKind::Unaided) {
+        html_body.push_str(include_str!("../../html/hint_form.html"));
+    }
+
+    html_body.push_str(include_str!("../../html/answer_form.html"));
+    html_body.push_str(include_str!("../../html/skip_form.html"));
+
+    let html_body = html_body
+        .replace("${{SESSION_ID}}", &session_id.to_string())
+        .replace("${{CLUE_ID}}", &hex::encode(clue.code))
+        .replace("${{SKIP_BUTTON_TEXT}}", skip_text);
+
+    super::fill_body(&html_body)
+}
+
+pub fn no_more_clues() -> Html<String> {
+    Html("TODO: All done page".into())
 }

@@ -2,10 +2,7 @@ use {
     crate::state::State,
     std::fmt,
     tokio::sync::oneshot,
-    treasure_hunt_core::{
-        clues::{Clue, status::KnowledgeKind},
-        session::SessionId,
-    },
+    treasure_hunt_core::{clues::ClueView, session::SessionId},
 };
 
 #[derive(Debug)]
@@ -24,15 +21,12 @@ impl std::error::Error for CurrentClueError {}
 pub fn handle(
     state: &mut State,
     id: &SessionId,
-    response: oneshot::Sender<Result<Option<(Clue, KnowledgeKind)>, CurrentClueError>>,
+    response: oneshot::Sender<Result<Option<ClueView>, CurrentClueError>>,
 ) {
     response.send(inner(state, id)).ok();
 }
 
-fn inner(
-    state: &mut State,
-    id: &SessionId,
-) -> Result<Option<(Clue, KnowledgeKind)>, CurrentClueError> {
+fn inner(state: &mut State, id: &SessionId) -> Result<Option<ClueView>, CurrentClueError> {
     let team_session = state
         .sessions
         .get_mut(id)

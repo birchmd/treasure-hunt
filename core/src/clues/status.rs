@@ -36,6 +36,10 @@ impl<'a> CurrentClueStatus<'a> {
         }
     }
 
+    pub fn is_skipped(&self) -> bool {
+        matches!(self.inner, Status::Skipped { .. })
+    }
+
     pub fn get_knowledge_kind(mut self) -> KnowledgeKind {
         *self.kind()
     }

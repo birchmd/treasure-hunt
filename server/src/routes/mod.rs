@@ -1,6 +1,7 @@
 use axum::response::Html;
 
 pub mod clues;
+pub mod hint;
 pub mod leaderboard;
 pub mod register;
 

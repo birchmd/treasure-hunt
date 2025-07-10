@@ -1,6 +1,6 @@
 use {
     crate::clues::{
-        self, Clue, Clues,
+        self, Clue, ClueView, Clues,
         status::{CurrentClueStatus, KnowledgeKind, Status},
     },
     rand::Rng,
@@ -79,9 +79,14 @@ impl Session {
         Some(status.duration())
     }
 
-    pub fn current_clue(&mut self) -> Option<(Clue, KnowledgeKind)> {
+    pub fn current_clue(&mut self) -> Option<ClueView> {
         let (clue, status) = self.inner_current_clue()?;
-        Some((clue.clone(), status.get_knowledge_kind()))
+        let view = ClueView {
+            clue: clue.clone(),
+            is_previously_skipped: status.is_skipped(),
+            knowledge: status.get_knowledge_kind(),
+        };
+        Some(view)
     }
 
     pub fn try_solve(&mut self, submitted_answer: &str) -> Option<i32> {
@@ -222,7 +227,14 @@ fn test_session() {
 
     // Now we are back to clues we skipped
     let clue = session.current_clue();
-    assert_eq!(clue, Some((clues.0[3].clone(), KnowledgeKind::Unaided)));
+    assert_eq!(
+        clue,
+        Some(ClueView::new(
+            clues.0[3].clone(),
+            KnowledgeKind::Unaided,
+            true
+        ))
+    );
 
     // If we skip a clue a second time then it is declined
     session.skip_current_clue();
