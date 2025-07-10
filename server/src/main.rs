@@ -37,6 +37,7 @@ async fn main() {
                 .post_service(routes::register::action.with_state(sender.clone())),
         )
         .route("/leaderboard", get(routes::leaderboard::action))
+        .route("/clue/{id}", get(routes::clues::form))
         .with_state(sender);
     let bind_url = format!("0.0.0.0:{}", config.port);
     let listener = tokio::net::TcpListener::bind(bind_url).await.unwrap();

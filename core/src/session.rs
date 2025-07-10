@@ -79,9 +79,9 @@ impl Session {
         Some(status.duration())
     }
 
-    pub fn current_clue(&mut self) -> Option<Clue> {
-        let (clue, _) = self.inner_current_clue()?;
-        Some(clue.clone())
+    pub fn current_clue(&mut self) -> Option<(Clue, KnowledgeKind)> {
+        let (clue, status) = self.inner_current_clue()?;
+        Some((clue.clone(), status.get_knowledge_kind()))
     }
 
     pub fn try_solve(&mut self, submitted_answer: &str) -> Option<i32> {
@@ -222,7 +222,7 @@ fn test_session() {
 
     // Now we are back to clues we skipped
     let clue = session.current_clue();
-    assert_eq!(clue, Some(clues.0[3].clone()));
+    assert_eq!(clue, Some((clues.0[3].clone(), KnowledgeKind::Unaided)));
 
     // If we skip a clue a second time then it is declined
     session.skip_current_clue();

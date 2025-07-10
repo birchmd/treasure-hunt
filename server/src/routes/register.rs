@@ -35,7 +35,7 @@ pub async fn action(
 
     inner_register(sender, input)
         .await
-        .unwrap_or_else(|e| Html(format!("An error occurred: {e:?}")))
+        .unwrap_or_else(super::error_to_html)
 }
 
 #[derive(serde::Deserialize, Debug)]

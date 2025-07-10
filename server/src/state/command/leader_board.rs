@@ -1,6 +1,7 @@
-use tokio::sync::oneshot;
-
-use crate::state::{State, TeamName};
+use {
+    crate::state::{State, TeamName},
+    tokio::sync::oneshot,
+};
 
 #[derive(Debug)]
 pub struct LeaderboardRow {

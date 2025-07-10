@@ -59,6 +59,9 @@ impl State {
                         team_name,
                         response,
                     } => command::new_session::handle(&mut self, team_name, response),
+                    Command::GetCurrentClue { id, response } => {
+                        command::current_clue::handle(&mut self, &id, response)
+                    }
                     Command::Leaderboard { response } => {
                         command::leader_board::handle(&self, response);
                     }

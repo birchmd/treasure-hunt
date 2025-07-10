@@ -36,6 +36,10 @@ impl<'a> CurrentClueStatus<'a> {
         }
     }
 
+    pub fn get_knowledge_kind(mut self) -> KnowledgeKind {
+        *self.kind()
+    }
+
     pub fn solved(mut self) -> &'a mut Status {
         let (kind, time) = self.unpack();
         let duration = time.elapsed();

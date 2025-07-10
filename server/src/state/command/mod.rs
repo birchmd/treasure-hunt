@@ -1,10 +1,16 @@
 use {
-    self::{leader_board::LeaderboardRow, new_session::NewSessionError},
+    self::{
+        current_clue::CurrentClueError, leader_board::LeaderboardRow, new_session::NewSessionError,
+    },
     crate::state::TeamName,
     tokio::sync::oneshot,
-    treasure_hunt_core::session::SessionId,
+    treasure_hunt_core::{
+        clues::{Clue, status::KnowledgeKind},
+        session::SessionId,
+    },
 };
 
+pub mod current_clue;
 pub mod leader_board;
 pub mod new_session;
 
@@ -14,6 +20,10 @@ pub enum Command {
     NewSession {
         team_name: TeamName,
         response: oneshot::Sender<Result<SessionId, NewSessionError>>,
+    },
+    GetCurrentClue {
+        id: SessionId,
+        response: oneshot::Sender<Result<Option<(Clue, KnowledgeKind)>, CurrentClueError>>,
     },
     Leaderboard {
         response: oneshot::Sender<Vec<LeaderboardRow>>,
