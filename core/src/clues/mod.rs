@@ -1,7 +1,7 @@
 use {
     self::status::KnowledgeKind,
     sha3::{Digest, Sha3_256},
-    std::{io, path::Path},
+    std::{io, path::Path, time::Duration},
 };
 
 pub mod arrangement;
@@ -78,14 +78,21 @@ pub struct ClueView {
     pub clue: Clue,
     pub knowledge: KnowledgeKind,
     pub is_previously_skipped: bool,
+    pub duration: Duration,
 }
 
 impl ClueView {
-    pub fn new(clue: Clue, knowledge: KnowledgeKind, is_previously_skipped: bool) -> Self {
+    pub fn new(
+        clue: Clue,
+        knowledge: KnowledgeKind,
+        is_previously_skipped: bool,
+        duration: Duration,
+    ) -> Self {
         Self {
             clue,
             knowledge,
             is_previously_skipped,
+            duration,
         }
     }
 

@@ -75,8 +75,11 @@ impl<'a> CurrentClueStatus<'a> {
         }
     }
 
-    pub fn duration(mut self) -> Duration {
-        let (_, time) = self.unpack();
+    pub fn duration(&self) -> Duration {
+        let time = match &self.inner {
+            Status::Seen { time, .. } | Status::Skipped { time, .. } => time,
+            _ => unreachable!(),
+        };
         time.elapsed()
     }
 

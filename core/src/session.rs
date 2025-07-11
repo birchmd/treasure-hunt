@@ -81,10 +81,13 @@ impl Session {
 
     pub fn current_clue(&mut self) -> Option<ClueView> {
         let (clue, status) = self.inner_current_clue()?;
+        let is_previously_skipped = status.is_skipped();
+        let duration = status.duration();
         let view = ClueView {
             clue: clue.clone(),
-            is_previously_skipped: status.is_skipped(),
             knowledge: status.get_knowledge_kind(),
+            is_previously_skipped,
+            duration,
         };
         Some(view)
     }
@@ -226,15 +229,10 @@ fn test_session() {
     }
 
     // Now we are back to clues we skipped
-    let clue = session.current_clue();
-    assert_eq!(
-        clue,
-        Some(ClueView::new(
-            clues.0[3].clone(),
-            KnowledgeKind::Unaided,
-            true
-        ))
-    );
+    let clue_view = session.current_clue().unwrap();
+    assert_eq!(clue_view.clue, clues.0[3]);
+    assert_eq!(clue_view.knowledge, KnowledgeKind::Unaided);
+    assert!(clue_view.is_previously_skipped);
 
     // If we skip a clue a second time then it is declined
     session.skip_current_clue();
