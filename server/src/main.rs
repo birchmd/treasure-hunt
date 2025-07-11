@@ -42,7 +42,14 @@ async fn main() {
         )
         .route("/leaderboard", get(routes::leaderboard::action))
         .route("/clue/{id}", get(routes::clues::form))
-        .route("/hint/{session_id}/{clue_id}", post(routes::hint::action))
+        .route(
+            "/hint/{session_id}/{clue_id}",
+            post(routes::hint::hint_action),
+        )
+        .route(
+            "/reveal/{session_id}/{clue_id}",
+            post(routes::hint::reveal_action),
+        )
         .with_state(sender);
     let bind_url = format!("0.0.0.0:{}", config.port);
     let listener = tokio::net::TcpListener::bind(bind_url).await.unwrap();

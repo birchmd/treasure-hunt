@@ -18,7 +18,7 @@ pub struct Clue {
 }
 
 impl Clue {
-    #[cfg(test)]
+    #[cfg(any(feature = "test-only", test))]
     pub fn mock(seed: u64, location: &'static str) -> Self {
         let code = answer_to_code(&seed.to_string());
         let poem = hex::encode(code);
@@ -99,6 +99,12 @@ impl ClueView {
     pub fn hinted(&mut self) {
         if matches!(self.knowledge, KnowledgeKind::Unaided) {
             self.knowledge = KnowledgeKind::WithHint;
+        }
+    }
+
+    pub fn revealed(&mut self) {
+        if matches!(self.knowledge, KnowledgeKind::WithHint) {
+            self.knowledge = KnowledgeKind::KnowingItem;
         }
     }
 }

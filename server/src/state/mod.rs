@@ -62,7 +62,10 @@ impl State {
                     Command::GetCurrentClue { id, response } => {
                         command::current_clue::handle(&mut self, &id, response)
                     }
-                    Command::HintCurrentClue { id } => command::hint::handle(&mut self, &id),
+                    Command::HintCurrentClue { id } => command::hint::handle_hint(&mut self, &id),
+                    Command::RevealCurrentItem { id } => {
+                        command::hint::handle_reveal(&mut self, &id)
+                    }
                     Command::Leaderboard { response } => {
                         command::leader_board::handle(&self, response);
                     }

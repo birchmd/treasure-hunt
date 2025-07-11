@@ -26,6 +26,9 @@ pub enum Command {
     HintCurrentClue {
         id: SessionId,
     },
+    RevealCurrentItem {
+        id: SessionId,
+    },
     Leaderboard {
         response: oneshot::Sender<Vec<LeaderboardRow>>,
     },

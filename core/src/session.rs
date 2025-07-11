@@ -171,9 +171,12 @@ fn test_session() {
     let clues = Clues::mock();
     let mut session = Session::new(clues.clone());
 
-    // `current_clue` is idempotent
-    let clue = session.current_clue();
-    assert_eq!(clue, session.current_clue());
+    // `current_clue` is idempotent (except for the duration)
+    let clue1 = session.current_clue().unwrap();
+    let clue2 = session.current_clue().unwrap();
+    assert_eq!(clue1.clue, clue2.clue);
+    assert_eq!(clue1.knowledge, clue2.knowledge);
+    assert_eq!(clue1.is_previously_skipped, clue2.is_previously_skipped);
 
     // We can solve the current clue
     let points = session.try_solve(&answers[0]).unwrap();
@@ -185,11 +188,17 @@ fn test_session() {
     assert_eq!(points, -100, "Wrong submit penalty");
 
     // We are still on the same clue since we did not solve or skip
-    assert_eq!(clue, session.current_clue());
+    assert_eq!(
+        clue.as_ref().unwrap().clue,
+        session.current_clue().as_ref().unwrap().clue
+    );
 
     // Submitting a completely wrong answer does not change the state
     assert!(session.try_solve("Hello, world!").is_none());
-    assert_eq!(clue, session.current_clue());
+    assert_eq!(
+        clue.as_ref().unwrap().clue,
+        session.current_clue().as_ref().unwrap().clue
+    );
 
     // We can ask for a hint
     assert_eq!(session.hint_current_clue(), Some(clues.0[1].hint.clone()));

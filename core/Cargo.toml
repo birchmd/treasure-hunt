@@ -3,6 +3,10 @@ name = "treasure-hunt-core"
 version.workspace = true
 edition.workspace = true
 
+[features]
+default = []
+test-only = []
+
 [dependencies]
 hex.workspace = true
 rand.workspace = true
