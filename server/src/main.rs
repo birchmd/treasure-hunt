@@ -54,6 +54,7 @@ async fn main() {
             "/answer/{session_id}/{clue_id}",
             post(routes::answer::action),
         )
+        .route("/skip/{session_id}/{clue_id}", post(routes::skip::action))
         .with_state(sender);
     let bind_url = format!("0.0.0.0:{}", config.port);
     let listener = tokio::net::TcpListener::bind(bind_url).await.unwrap();

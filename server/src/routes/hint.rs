@@ -53,7 +53,7 @@ async fn update_with_hint(
         let time_to_hint = MIN_HINT_DURATION.saturating_sub(clue_view.duration);
         clue_view.clue.poem.push_str(&format!(
             "<br><br>Wait at least {} for a hint.",
-            format_duration(time_to_hint)
+            super::format_duration(time_to_hint)
         ));
         return Ok(construct_clues_form(session_id, clue_view));
     }
@@ -82,7 +82,7 @@ async fn update_with_item(
         let time_to_hint = MIN_ITEM_DURATION.saturating_sub(clue_view.duration);
         clue_view.clue.hint.push_str(&format!(
             "<br><br>Wait at least {} for revealing the item.",
-            format_duration(time_to_hint)
+            super::format_duration(time_to_hint)
         ));
         return Ok(construct_clues_form(session_id, clue_view));
     }
@@ -92,16 +92,4 @@ async fn update_with_item(
     sender.send(command).await?;
     clue_view.revealed();
     Ok(clues::construct_clues_form(session_id, clue_view))
-}
-
-fn format_duration(duration: Duration) -> String {
-    let seconds = duration.as_secs();
-    match seconds {
-        1 => "1 second".into(),
-        seconds if seconds < 60 => format!("{} seconds", seconds),
-        seconds => match seconds / 60 {
-            1 => "1 minute".into(),
-            minutes => format!("{} minutes", minutes),
-        },
-    }
 }

@@ -13,3 +13,10 @@ pub fn handle_reveal(state: &mut State, id: &SessionId) {
     };
     team_session.session.reveal_current_item();
 }
+
+pub fn handle_skip(state: &mut State, id: &SessionId) {
+    let Some(team_session) = state.sessions.get_mut(id) else {
+        return;
+    };
+    team_session.session.skip_current_clue();
+}

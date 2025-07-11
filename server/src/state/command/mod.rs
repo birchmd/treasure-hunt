@@ -30,6 +30,9 @@ pub enum Command {
     RevealCurrentItem {
         id: SessionId,
     },
+    SkipClue {
+        id: SessionId,
+    },
     AnswerCurrentClue {
         id: SessionId,
         guess: String,

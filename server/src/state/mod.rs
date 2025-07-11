@@ -66,6 +66,7 @@ impl State {
                     Command::RevealCurrentItem { id } => {
                         command::hint::handle_reveal(&mut self, &id)
                     }
+                    Command::SkipClue { id } => command::hint::handle_skip(&mut self, &id),
                     Command::AnswerCurrentClue {
                         id,
                         guess,
