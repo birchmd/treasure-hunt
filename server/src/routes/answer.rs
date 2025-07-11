@@ -36,7 +36,7 @@ pub async fn action(
             Some(x) if x >= 0 => Ok(super::fill_body(&correct_answer(session_id))),
             Some(penalty) => {
                 let message = format!(
-                    "<br><br>That answer is correct for some clue, but not this clue. You lose {} points for your error. Try again to find the answer for the current clue.",
+                    "<br><br>That answer is correct for <em>some</em> clue, but not <em>this</em> clue. You lose {} points for your error. Try again to find the answer for the current clue.",
                     penalty.abs()
                 );
                 clue_view.clue.poem.push_str(&message);

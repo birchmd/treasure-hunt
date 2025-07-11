@@ -28,8 +28,9 @@ pub async fn action(
         };
         sender.send(command).await?;
         let id = rx.await??;
-        let html_body =
-            format!("<h1>Welcome</h1><p>Welcome {raw_team_name}! Your session id is {id}.</p>");
+        let html_body = format!(
+            r#"<h1>Welcome</h1><p>Welcome {raw_team_name}! Your session id is {id}.</p><br><br><p><a href="/clue/{id}">Click here</a> to see the first clue.</p>"#
+        );
         Ok(super::fill_body(&html_body))
     }
 
