@@ -1,5 +1,5 @@
 use {
-    crate::state::command::Command,
+    crate::{RouteState, state::command::Command},
     axum::{
         extract::{Path, State},
         response::Html,
@@ -12,14 +12,14 @@ use {
 };
 
 pub async fn use_current_clue<G, F>(
-    sender: mpsc::Sender<Command>,
+    route_state: RouteState,
     session_id: &str,
     clue_id: &str,
     logic: G,
 ) -> anyhow::Result<Html<String>>
 where
     F: Future<Output = anyhow::Result<Html<String>>>,
-    G: FnOnce(SessionId, ClueView, mpsc::Sender<Command>) -> F,
+    G: FnOnce(SessionId, ClueView, RouteState) -> F,
 {
     let Some(session_id) = SessionId::new(session_id) else {
         anyhow::bail!("Invalid session ID");
@@ -31,7 +31,7 @@ where
         id: session_id,
         response: tx,
     };
-    sender.send(command).await?;
+    route_state.sender.send(command).await?;
     let Some(clue_view) = rx.await?? else {
         return Ok(no_more_clues());
     };
@@ -43,13 +43,10 @@ where
         return Ok(construct_clues_form(session_id, clue_view));
     }
 
-    logic(session_id, clue_view, sender).await
+    logic(session_id, clue_view, route_state).await
 }
 
-pub async fn form(
-    State(sender): State<mpsc::Sender<Command>>,
-    Path(id): Path<String>,
-) -> Html<String> {
+pub async fn form(State(route_state): State<RouteState>, Path(id): Path<String>) -> Html<String> {
     async fn inner_clues_form(
         sender: mpsc::Sender<Command>,
         id: &str,
@@ -69,7 +66,7 @@ pub async fn form(
         Ok(construct_clues_form(session_id, clue_view))
     }
 
-    inner_clues_form(sender, &id)
+    inner_clues_form(route_state.sender, &id)
         .await
         .unwrap_or_else(super::error_to_html)
 }

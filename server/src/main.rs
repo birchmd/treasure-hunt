@@ -1,10 +1,12 @@
 use {
-    self::config::Config,
+    self::{config::Config, state::command::Command},
     axum::{
         Router,
         handler::Handler,
         routing::{get, post},
     },
+    std::sync::Arc,
+    tokio::sync::mpsc,
     tracing_subscriber::fmt::format::FmtSpan,
 };
 
@@ -33,12 +35,17 @@ async fn main() {
     let (state, sender) = state::State::new(&config).unwrap();
 
     let state_task = state.spawn();
+    let bind_url = format!("0.0.0.0:{}", config.port);
+    let route_state = RouteState {
+        sender,
+        config: Arc::new(config),
+    };
 
     let app = Router::new()
         .route(
             "/",
             get(routes::register::form)
-                .post_service(routes::register::action.with_state(sender.clone())),
+                .post_service(routes::register::action.with_state(route_state.clone())),
         )
         .route("/leaderboard", get(routes::leaderboard::action))
         .route("/clue/{id}", get(routes::clues::form))
@@ -55,9 +62,14 @@ async fn main() {
             post(routes::answer::action),
         )
         .route("/skip/{session_id}/{clue_id}", post(routes::skip::action))
-        .with_state(sender);
-    let bind_url = format!("0.0.0.0:{}", config.port);
+        .with_state(route_state);
     let listener = tokio::net::TcpListener::bind(bind_url).await.unwrap();
     axum::serve(listener, app).await.unwrap();
     state_task.await.unwrap();
+}
+
+#[derive(Debug, Clone)]
+struct RouteState {
+    sender: mpsc::Sender<Command>,
+    config: Arc<Config>,
 }

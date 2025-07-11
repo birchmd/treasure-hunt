@@ -1,5 +1,8 @@
 use {
-    crate::state::{TeamName, command::Command},
+    crate::{
+        RouteState,
+        state::{TeamName, command::Command},
+    },
     axum::{
         extract::{Form, State},
         response::Html,
@@ -12,7 +15,7 @@ pub async fn form() -> Html<String> {
 }
 
 pub async fn action(
-    State(sender): State<mpsc::Sender<Command>>,
+    State(route_state): State<RouteState>,
     Form(input): Form<RegisterInput>,
 ) -> Html<String> {
     async fn inner_register(
@@ -34,7 +37,7 @@ pub async fn action(
         Ok(super::fill_body(&html_body))
     }
 
-    inner_register(sender, input)
+    inner_register(route_state.sender, input)
         .await
         .unwrap_or_else(super::error_to_html)
 }

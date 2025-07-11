@@ -1,5 +1,6 @@
 use {
     crate::{
+        RouteState,
         routes::clues::{self, construct_clues_form},
         state::command::Command,
     },
@@ -7,23 +8,23 @@ use {
         extract::{Form, Path, State},
         response::Html,
     },
-    tokio::sync::{mpsc, oneshot},
+    tokio::sync::oneshot,
     treasure_hunt_core::{clues::ClueView, session::SessionId},
 };
 
 pub async fn action(
-    State(sender): State<mpsc::Sender<Command>>,
+    State(route_state): State<RouteState>,
     Path((session_id, clue_id)): Path<(String, String)>,
     Form(guess): Form<AnswerInput>,
 ) -> Html<String> {
-    let logic = |session_id, mut clue_view: ClueView, sender: mpsc::Sender<Command>| async move {
+    let logic = |session_id, mut clue_view: ClueView, route_state: RouteState| async move {
         let (tx, rx) = oneshot::channel();
         let command = Command::AnswerCurrentClue {
             id: session_id,
             guess: guess.clue_answer,
             response: tx,
         };
-        sender.send(command).await?;
+        route_state.sender.send(command).await?;
         let points = rx.await??;
         match points {
             None => {
@@ -44,7 +45,7 @@ pub async fn action(
             }
         }
     };
-    clues::use_current_clue(sender, &session_id, &clue_id, logic)
+    clues::use_current_clue(route_state, &session_id, &clue_id, logic)
         .await
         .unwrap_or_else(super::error_to_html)
 }

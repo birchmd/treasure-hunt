@@ -1,5 +1,6 @@
 use {
     crate::{
+        RouteState,
         routes::clues::{self, construct_clues_form},
         state::command::Command,
     },
@@ -8,17 +9,14 @@ use {
         response::Html,
     },
     std::time::Duration,
-    tokio::sync::mpsc,
     treasure_hunt_core::{clues::ClueView, session::SessionId},
 };
 
-const MIN_SKIP_DURATION: Duration = Duration::from_secs(10 * 60);
-
 pub async fn action(
-    State(sender): State<mpsc::Sender<Command>>,
+    State(route_state): State<RouteState>,
     Path((session_id, clue_id)): Path<(String, String)>,
 ) -> Html<String> {
-    clues::use_current_clue(sender, &session_id, &clue_id, do_skip)
+    clues::use_current_clue(route_state, &session_id, &clue_id, do_skip)
         .await
         .unwrap_or_else(super::error_to_html)
 }
@@ -26,11 +24,12 @@ pub async fn action(
 async fn do_skip(
     session_id: SessionId,
     mut clue_view: ClueView,
-    sender: mpsc::Sender<Command>,
+    route_state: RouteState,
 ) -> anyhow::Result<Html<String>> {
-    // Require waiting at least 10 minutes before allowing skipping
-    if clue_view.duration < MIN_SKIP_DURATION {
-        let time_to_hint = MIN_SKIP_DURATION.saturating_sub(clue_view.duration);
+    // Require waiting some time before allowing skipping
+    let min_skip_duration = Duration::from_secs(route_state.config.min_skip_seconds);
+    if clue_view.duration < min_skip_duration {
+        let time_to_hint = min_skip_duration.saturating_sub(clue_view.duration);
         clue_view.clue.poem.push_str(&format!(
             "<br><br>Don't give up yet! Wait at least {} before you can skip.",
             super::format_duration(time_to_hint)
@@ -39,6 +38,6 @@ async fn do_skip(
     }
 
     let command = Command::SkipClue { id: session_id };
-    sender.send(command).await?;
-    Ok(clues::form(State(sender), Path(session_id.to_string())).await)
+    route_state.sender.send(command).await?;
+    Ok(clues::form(State(route_state), Path(session_id.to_string())).await)
 }

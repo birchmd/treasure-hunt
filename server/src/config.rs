@@ -8,6 +8,9 @@ pub struct Config {
     pub clues_path: String,
     pub log_level: LogLevel,
     pub port: usize,
+    pub min_hint_seconds: u64,
+    pub min_reveal_seconds: u64,
+    pub min_skip_seconds: u64,
     pub state_channel_size: usize,
 }
 

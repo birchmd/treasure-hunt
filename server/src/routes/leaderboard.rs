@@ -1,10 +1,10 @@
 use {
-    crate::state::command::Command,
+    crate::{RouteState, state::command::Command},
     axum::{extract::State, response::Html},
     tokio::sync::{mpsc, oneshot},
 };
 
-pub async fn action(State(sender): State<mpsc::Sender<Command>>) -> Html<String> {
+pub async fn action(State(route_state): State<RouteState>) -> Html<String> {
     async fn inner_leaderboard(sender: mpsc::Sender<Command>) -> anyhow::Result<Html<String>> {
         let (tx, rx) = oneshot::channel();
         let command = Command::Leaderboard { response: tx };
@@ -21,7 +21,7 @@ pub async fn action(State(sender): State<mpsc::Sender<Command>>) -> Html<String>
         result.push_str("</table>");
         Ok(super::fill_body(&result))
     }
-    inner_leaderboard(sender)
+    inner_leaderboard(route_state.sender)
         .await
         .unwrap_or_else(super::error_to_html)
 }
