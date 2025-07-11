@@ -11,6 +11,41 @@ use {
     },
 };
 
+pub async fn use_current_clue<G, F>(
+    sender: mpsc::Sender<Command>,
+    session_id: &str,
+    clue_id: &str,
+    logic: G,
+) -> anyhow::Result<Html<String>>
+where
+    F: Future<Output = anyhow::Result<Html<String>>>,
+    G: FnOnce(SessionId, ClueView, mpsc::Sender<Command>) -> F,
+{
+    let Some(session_id) = SessionId::new(session_id) else {
+        anyhow::bail!("Invalid session ID");
+    };
+
+    // Look up current clue
+    let (tx, rx) = oneshot::channel();
+    let command = Command::GetCurrentClue {
+        id: session_id,
+        response: tx,
+    };
+    sender.send(command).await?;
+    let Some(clue_view) = rx.await?? else {
+        return Ok(no_more_clues());
+    };
+
+    // If the current clue does not match the one the hint was
+    // requested for then the request is invalid and we just show
+    // the normal clues page.
+    if hex::encode(clue_view.clue.code) != clue_id {
+        return Ok(construct_clues_form(session_id, clue_view));
+    }
+
+    logic(session_id, clue_view, sender).await
+}
+
 pub async fn form(
     State(sender): State<mpsc::Sender<Command>>,
     Path(id): Path<String>,

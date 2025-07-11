@@ -50,6 +50,10 @@ async fn main() {
             "/reveal/{session_id}/{clue_id}",
             post(routes::hint::reveal_action),
         )
+        .route(
+            "/answer/{session_id}/{clue_id}",
+            post(routes::answer::action),
+        )
         .with_state(sender);
     let bind_url = format!("0.0.0.0:{}", config.port);
     let listener = tokio::net::TcpListener::bind(bind_url).await.unwrap();

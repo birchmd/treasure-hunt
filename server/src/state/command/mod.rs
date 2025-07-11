@@ -7,6 +7,7 @@ use {
     treasure_hunt_core::{clues::ClueView, session::SessionId},
 };
 
+pub mod answer;
 pub mod current_clue;
 pub mod hint;
 pub mod leader_board;
@@ -28,6 +29,11 @@ pub enum Command {
     },
     RevealCurrentItem {
         id: SessionId,
+    },
+    AnswerCurrentClue {
+        id: SessionId,
+        guess: String,
+        response: oneshot::Sender<Result<Option<i32>, CurrentClueError>>,
     },
     Leaderboard {
         response: oneshot::Sender<Vec<LeaderboardRow>>,
