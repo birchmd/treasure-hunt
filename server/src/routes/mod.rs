@@ -7,6 +7,7 @@ pub mod answer;
 pub mod clues;
 pub mod hint;
 pub mod leaderboard;
+pub mod login;
 pub mod register;
 pub mod skip;
 

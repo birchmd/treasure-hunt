@@ -41,12 +41,14 @@ async fn main() {
         config: Arc::new(config),
     };
 
+    // TODO: routes for login and about
     let app = Router::new()
         .route(
             "/",
             get(routes::register::form)
                 .post_service(routes::register::action.with_state(route_state.clone())),
         )
+        .route("/login", post(routes::login::action))
         .route("/leaderboard/{id}", get(routes::leaderboard::action))
         .route("/clue/{id}", get(routes::clues::form))
         .route(
