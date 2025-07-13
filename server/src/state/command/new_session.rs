@@ -31,6 +31,7 @@ pub fn handle(
     let session = Session::new(clues);
     let id = session.id;
     response.send(Ok(id)).ok();
+    tracing::info!("Added new session. TeamName={team_name} SessionId={id}");
     state.team_names.insert(team_name.clone());
     state
         .sessions
