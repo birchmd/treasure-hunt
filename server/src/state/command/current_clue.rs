@@ -1,5 +1,5 @@
 use {
-    crate::state::State,
+    crate::state::{State, TeamName},
     std::fmt,
     tokio::sync::oneshot,
     treasure_hunt_core::{clues::ClueView, session::SessionId},
@@ -21,15 +21,19 @@ impl std::error::Error for CurrentClueError {}
 pub fn handle(
     state: &mut State,
     id: &SessionId,
-    response: oneshot::Sender<Result<Option<ClueView>, CurrentClueError>>,
+    response: oneshot::Sender<Result<(TeamName, Option<ClueView>), CurrentClueError>>,
 ) {
     response.send(inner(state, id)).ok();
 }
 
-fn inner(state: &mut State, id: &SessionId) -> Result<Option<ClueView>, CurrentClueError> {
+fn inner(
+    state: &mut State,
+    id: &SessionId,
+) -> Result<(TeamName, Option<ClueView>), CurrentClueError> {
     let team_session = state
         .sessions
         .get_mut(id)
         .ok_or(CurrentClueError::UnknownSessionId)?;
-    Ok(team_session.session.current_clue())
+    let current_clue = team_session.session.current_clue();
+    Ok((team_session.name.clone(), current_clue))
 }

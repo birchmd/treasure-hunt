@@ -1,5 +1,8 @@
 use {
-    crate::{RouteState, state::command::Command},
+    crate::{
+        RouteState,
+        state::{TeamName, command::Command},
+    },
     axum::{
         extract::{Path, State},
         response::Html,
@@ -19,7 +22,7 @@ pub async fn use_current_clue<G, F>(
 ) -> anyhow::Result<Html<String>>
 where
     F: Future<Output = anyhow::Result<Html<String>>>,
-    G: FnOnce(SessionId, ClueView, RouteState) -> F,
+    G: FnOnce(SessionId, TeamName, ClueView, RouteState) -> F,
 {
     let Some(session_id) = SessionId::new(session_id) else {
         anyhow::bail!("Invalid session ID");
@@ -32,7 +35,8 @@ where
         response: tx,
     };
     route_state.sender.send(command).await?;
-    let Some(clue_view) = rx.await?? else {
+    let (team_name, maybe_clue) = rx.await??;
+    let Some(clue_view) = maybe_clue else {
         return Ok(no_more_clues());
     };
 
@@ -40,10 +44,10 @@ where
     // requested for then the request is invalid and we just show
     // the normal clues page.
     if hex::encode(clue_view.clue.code) != clue_id {
-        return Ok(construct_clues_form(session_id, clue_view));
+        return Ok(construct_clues_form(session_id, team_name, clue_view));
     }
 
-    logic(session_id, clue_view, route_state).await
+    logic(session_id, team_name, clue_view, route_state).await
 }
 
 pub async fn form(State(route_state): State<RouteState>, Path(id): Path<String>) -> Html<String> {
@@ -52,7 +56,8 @@ pub async fn form(State(route_state): State<RouteState>, Path(id): Path<String>)
         id: &str,
     ) -> anyhow::Result<Html<String>> {
         let Some(session_id) = SessionId::new(id) else {
-            anyhow::bail!("Invalid session ID");
+            // If the session is invalid then return the registration page instead.
+            return Ok(crate::routes::register::form().await);
         };
         let (tx, rx) = oneshot::channel();
         let command = Command::GetCurrentClue {
@@ -60,10 +65,11 @@ pub async fn form(State(route_state): State<RouteState>, Path(id): Path<String>)
             response: tx,
         };
         sender.send(command).await?;
-        let Some(clue_view) = rx.await?? else {
+        let (team_name, maybe_clue) = rx.await??;
+        let Some(clue_view) = maybe_clue else {
             return Ok(no_more_clues());
         };
-        Ok(construct_clues_form(session_id, clue_view))
+        Ok(construct_clues_form(session_id, team_name, clue_view))
     }
 
     inner_clues_form(route_state.sender, &id)
@@ -71,7 +77,11 @@ pub async fn form(State(route_state): State<RouteState>, Path(id): Path<String>)
         .unwrap_or_else(super::error_to_html)
 }
 
-pub fn construct_clues_form(session_id: SessionId, clue_view: ClueView) -> Html<String> {
+pub fn construct_clues_form(
+    session_id: SessionId,
+    team_name: TeamName,
+    clue_view: ClueView,
+) -> Html<String> {
     let clue = clue_view.clue;
     let knowledge = clue_view.knowledge;
     let (hint_url, hint_button_text) = match knowledge {
@@ -106,13 +116,16 @@ pub fn construct_clues_form(session_id: SessionId, clue_view: ClueView) -> Html<
     html_body.push_str(include_str!("../../html/skip_form.html"));
 
     let html_body = html_body
-        .replace("${{SESSION_ID}}", &session_id.to_string())
         .replace("${{CLUE_ID}}", &hex::encode(clue.code))
         .replace("${{HINT_BASE_URL}}", hint_url)
         .replace("${{HINT_BUTTON_TEXT}}", hint_button_text)
         .replace("${{SKIP_BUTTON_TEXT}}", skip_text);
 
-    super::fill_body(&html_body)
+    let team_data = super::TeamData {
+        team_name,
+        session_id,
+    };
+    super::fill_body(&html_body, Some(team_data))
 }
 
 pub fn no_more_clues() -> Html<String> {
@@ -121,12 +134,13 @@ pub fn no_more_clues() -> Html<String> {
 
 #[test]
 fn test_construct_clues_form() {
+    let team_name = TeamName::new("Michael").unwrap();
     let session_id = SessionId::random();
     let clue = treasure_hunt_core::clues::Clue::mock(1, "A");
     let duration = std::time::Duration::from_secs(0);
     let mut clue_view = ClueView::new(clue, KnowledgeKind::Unaided, false, duration);
 
-    let text = construct_clues_form(session_id, clue_view.clone()).0;
+    let text = construct_clues_form(session_id, team_name.clone(), clue_view.clone()).0;
     assert!(
         !text.contains("Hint: <p>"),
         "Hint is NOT present in unaided clue"
@@ -146,7 +160,7 @@ fn test_construct_clues_form() {
     );
 
     clue_view.hinted();
-    let text = construct_clues_form(session_id, clue_view.clone()).0;
+    let text = construct_clues_form(session_id, team_name.clone(), clue_view.clone()).0;
     assert!(text.contains("Hint: <p>"), "Hint is present in hinted clue");
     assert!(
         !text.contains("Item to find: <p>"),
@@ -163,7 +177,7 @@ fn test_construct_clues_form() {
     );
 
     clue_view.revealed();
-    let text = construct_clues_form(session_id, clue_view.clone()).0;
+    let text = construct_clues_form(session_id, team_name.clone(), clue_view.clone()).0;
     assert!(
         text.contains("Hint: <p>"),
         "Hint is present in revealed clue"
@@ -182,7 +196,7 @@ fn test_construct_clues_form() {
     );
 
     clue_view.is_previously_skipped = true;
-    let text = construct_clues_form(session_id, clue_view.clone()).0;
+    let text = construct_clues_form(session_id, team_name.clone(), clue_view.clone()).0;
     assert!(
         text.contains(r#"<input type="submit" value="Skip forever">"#),
         "skip forever button is present for previously skipped clue"

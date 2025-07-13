@@ -3,6 +3,10 @@ name = "treasure-hunt-server"
 version.workspace = true
 edition.workspace = true
 
+[features]
+default = []
+html-reload = []
+
 [dependencies]
 anyhow.workspace = true
 axum.workspace = true

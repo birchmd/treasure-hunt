@@ -51,6 +51,12 @@ impl State {
         Ok((state, sender))
     }
 
+    pub fn get_team_name(&self, maybe_id: &str) -> Option<&TeamName> {
+        let session_id = SessionId::new(maybe_id)?;
+        let session = self.sessions.get(&session_id)?;
+        Some(&session.name)
+    }
+
     pub fn spawn(mut self) -> tokio::task::JoinHandle<()> {
         tokio::spawn(async move {
             while let Some(command) = self.channel.recv().await {
@@ -74,8 +80,8 @@ impl State {
                     } => {
                         command::answer::handle(&mut self, &id, &guess, response);
                     }
-                    Command::Leaderboard { response } => {
-                        command::leader_board::handle(&self, response);
+                    Command::Leaderboard { maybe_id, response } => {
+                        command::leader_board::handle(&self, maybe_id, response);
                     }
                 }
             }

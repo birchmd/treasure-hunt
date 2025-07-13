@@ -17,7 +17,7 @@ pub async fn action(
     Path((session_id, clue_id)): Path<(String, String)>,
     Form(guess): Form<AnswerInput>,
 ) -> Html<String> {
-    let logic = |session_id, mut clue_view: ClueView, route_state: RouteState| async move {
+    let logic = |session_id, team_name, mut clue_view: ClueView, route_state: RouteState| async move {
         let (tx, rx) = oneshot::channel();
         let command = Command::AnswerCurrentClue {
             id: session_id,
@@ -32,16 +32,22 @@ pub async fn action(
                     .clue
                     .poem
                     .push_str("<br><br>That's the wrong answer! Try again.");
-                Ok(construct_clues_form(session_id, clue_view))
+                Ok(construct_clues_form(session_id, team_name, clue_view))
             }
-            Some(x) if x >= 0 => Ok(super::fill_body(&correct_answer(session_id))),
+            Some(x) if x >= 0 => Ok(super::fill_body(
+                &correct_answer(session_id),
+                Some(super::TeamData {
+                    team_name,
+                    session_id,
+                }),
+            )),
             Some(penalty) => {
                 let message = format!(
                     "<br><br>That answer is correct for <em>some</em> clue, but not <em>this</em> clue. You lose {} points for your error. Try again to find the answer for the current clue.",
                     penalty.abs()
                 );
                 clue_view.clue.poem.push_str(&message);
-                Ok(construct_clues_form(session_id, clue_view))
+                Ok(construct_clues_form(session_id, team_name, clue_view))
             }
         }
     };

@@ -47,7 +47,7 @@ async fn main() {
             get(routes::register::form)
                 .post_service(routes::register::action.with_state(route_state.clone())),
         )
-        .route("/leaderboard", get(routes::leaderboard::action))
+        .route("/leaderboard/{id}", get(routes::leaderboard::action))
         .route("/clue/{id}", get(routes::clues::form))
         .route(
             "/hint/{session_id}/{clue_id}",

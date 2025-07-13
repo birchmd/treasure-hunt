@@ -22,7 +22,7 @@ pub enum Command {
     },
     GetCurrentClue {
         id: SessionId,
-        response: oneshot::Sender<Result<Option<ClueView>, CurrentClueError>>,
+        response: oneshot::Sender<Result<(TeamName, Option<ClueView>), CurrentClueError>>,
     },
     HintCurrentClue {
         id: SessionId,
@@ -39,6 +39,7 @@ pub enum Command {
         response: oneshot::Sender<Result<Option<i32>, CurrentClueError>>,
     },
     Leaderboard {
-        response: oneshot::Sender<Vec<LeaderboardRow>>,
+        maybe_id: String,
+        response: oneshot::Sender<(Vec<LeaderboardRow>, Option<TeamName>)>,
     },
 }

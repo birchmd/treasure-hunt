@@ -1,14 +1,74 @@
 <!doctype html>
-<html>
+<html lang="en">
     <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, (min-scale=1, maximum-scale=1)">
         <title>Lynne and Michael's Treasure Hunt!</title>
         <style>
-            table, th, td {
-                border: 1px solid black;
+            * {
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            }
+
+            body {
+                background-color: #f8f9fa;
+                color: #333;
+                line-height: 1.6;
+            }
+
+            .top-menu {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 0 20px;
+            }
+
+            /* Navigation menu styles */
+            .main-nav {
+                border-bottom: 1px solid black;
+                padding: 10px;
+            }
+
+            .nav-link {
+                text-decoration: none;
+                color: #333;
+                font-size: 24px;
+                display: block;
+            }
+
+            .nav-link:hover {
+                background-color: black;
+                color: white;
+            }
+            
+            table {
+                border-collapse: collapse;
+                width: 100%;
+            }
+
+            th, td {
+                padding: 8px;
+                text-align: left;
+                border-bottom: 1px solid black;
             }
         </style>
     </head>
     <body>
-        ${{BODY}}
+        <header class="top-menu">
+            <nav class="main-nav">
+                <a href="/clue/${{SESSION_ID}}" class="nav-link">Clue</a>
+            </nav>
+            <nav class="main-nav">
+                <a href="/leaderboard/${{SESSION_ID}}" class="nav-link">Leaderboard</a>
+            </nav>
+            <nav class="main-nav">
+                <a href="/about/${{SESSION_ID}}" class="nav-link">About</a>
+            </nav>
+        </header>
+        <main style="margin-top: 20px; margin-left: 20px;">
+            ${{LOGIN_SECTION}}
+            <section style="margin-top: 40px;">
+                ${{BODY}}
+            </section>
+        </main>
     </body>
 </html>

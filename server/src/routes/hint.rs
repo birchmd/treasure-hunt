@@ -2,7 +2,7 @@ use {
     crate::{
         RouteState,
         routes::clues::{self, construct_clues_form},
-        state::command::Command,
+        state::{TeamName, command::Command},
     },
     axum::{
         extract::{Path, State},
@@ -35,6 +35,7 @@ pub async fn reveal_action(
 
 async fn update_with_hint(
     session_id: SessionId,
+    team_name: TeamName,
     mut clue_view: ClueView,
     route_state: RouteState,
 ) -> anyhow::Result<Html<String>> {
@@ -42,7 +43,9 @@ async fn update_with_hint(
     // then do not make any changes. This could be a spurious request
     // (e.g. from a page reload).
     if !matches!(clue_view.knowledge, KnowledgeKind::Unaided) {
-        return Ok(clues::construct_clues_form(session_id, clue_view));
+        return Ok(clues::construct_clues_form(
+            session_id, team_name, clue_view,
+        ));
     }
 
     // Require waiting some time before giving a hint
@@ -53,18 +56,21 @@ async fn update_with_hint(
             "<br><br>Wait at least {} for a hint.",
             super::format_duration(time_to_hint)
         ));
-        return Ok(construct_clues_form(session_id, clue_view));
+        return Ok(construct_clues_form(session_id, team_name, clue_view));
     }
 
     // Mark clue as hinted
     let command = Command::HintCurrentClue { id: session_id };
     route_state.sender.send(command).await?;
     clue_view.hinted();
-    Ok(clues::construct_clues_form(session_id, clue_view))
+    Ok(clues::construct_clues_form(
+        session_id, team_name, clue_view,
+    ))
 }
 
 async fn update_with_item(
     session_id: SessionId,
+    team_name: TeamName,
     mut clue_view: ClueView,
     route_state: RouteState,
 ) -> anyhow::Result<Html<String>> {
@@ -72,7 +78,9 @@ async fn update_with_item(
     // then do not make any changes. This could be a spurious request
     // (e.g. from a page reload).
     if !matches!(clue_view.knowledge, KnowledgeKind::WithHint) {
-        return Ok(clues::construct_clues_form(session_id, clue_view));
+        return Ok(clues::construct_clues_form(
+            session_id, team_name, clue_view,
+        ));
     }
 
     // Require waiting some time before revealing the item
@@ -83,12 +91,14 @@ async fn update_with_item(
             "<br><br>Wait at least {} for revealing the item.",
             super::format_duration(time_to_hint)
         ));
-        return Ok(construct_clues_form(session_id, clue_view));
+        return Ok(construct_clues_form(session_id, team_name, clue_view));
     }
 
     // Mark clue as revealed
     let command = Command::RevealCurrentItem { id: session_id };
     route_state.sender.send(command).await?;
     clue_view.revealed();
-    Ok(clues::construct_clues_form(session_id, clue_view))
+    Ok(clues::construct_clues_form(
+        session_id, team_name, clue_view,
+    ))
 }

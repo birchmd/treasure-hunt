@@ -2,7 +2,7 @@ use {
     crate::{
         RouteState,
         routes::clues::{self, construct_clues_form},
-        state::command::Command,
+        state::{TeamName, command::Command},
     },
     axum::{
         extract::{Path, State},
@@ -23,6 +23,7 @@ pub async fn action(
 
 async fn do_skip(
     session_id: SessionId,
+    team_name: TeamName,
     mut clue_view: ClueView,
     route_state: RouteState,
 ) -> anyhow::Result<Html<String>> {
@@ -34,7 +35,7 @@ async fn do_skip(
             "<br><br>Don't give up yet! Wait at least {} before you can skip.",
             super::format_duration(time_to_hint)
         ));
-        return Ok(construct_clues_form(session_id, clue_view));
+        return Ok(construct_clues_form(session_id, team_name, clue_view));
     }
 
     let command = Command::SkipClue { id: session_id };

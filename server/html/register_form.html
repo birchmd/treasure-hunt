@@ -1,8 +1,20 @@
+<h1>Welcome to Lynne and Michael's Treasure Hunt!</h1>
+<h3>To begin, you need to sign up.</h3>
 <form action="/" method="post">
     <label for="team_name">
         Enter your team name:
     </label>
     <input type="text" id="team_name" name="team_name">
+
+    <input type="submit" value="Submit">
+</form>
+
+<h3>If you already have a Session ID:</h3>
+<form action="/login" method="post">
+    <label for="session_id">
+        Enter your ID:
+    </label>
+    <input type="text" id="session_id" name="session_id">
 
     <input type="submit" value="Submit">
 </form>

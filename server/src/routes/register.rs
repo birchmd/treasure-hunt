@@ -11,7 +11,7 @@ use {
 };
 
 pub async fn form() -> Html<String> {
-    super::fill_body(include_str!("../../html/register_form.html"))
+    super::fill_body(include_str!("../../html/register_form.html"), None)
 }
 
 pub async fn action(
@@ -26,7 +26,7 @@ pub async fn action(
         let team_name = TeamName::new(raw_team_name)?;
         let (tx, rx) = oneshot::channel();
         let command = Command::NewSession {
-            team_name,
+            team_name: team_name.clone(),
             response: tx,
         };
         sender.send(command).await?;
@@ -34,7 +34,11 @@ pub async fn action(
         let html_body = format!(
             r#"<h1>Welcome</h1><p>Welcome {raw_team_name}! Your session id is {id}.</p><br><br><p><a href="/clue/{id}">Click here</a> to see the first clue.</p>"#
         );
-        Ok(super::fill_body(&html_body))
+        let team_data = super::TeamData {
+            team_name,
+            session_id: id,
+        };
+        Ok(super::fill_body(&html_body, Some(team_data)))
     }
 
     inner_register(route_state.sender, input)

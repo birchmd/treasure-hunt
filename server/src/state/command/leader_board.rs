@@ -9,7 +9,12 @@ pub struct LeaderboardRow {
     pub score: i32,
 }
 
-pub fn handle(state: &State, response: oneshot::Sender<Vec<LeaderboardRow>>) {
+pub fn handle(
+    state: &State,
+    maybe_id: String,
+    response: oneshot::Sender<(Vec<LeaderboardRow>, Option<TeamName>)>,
+) {
+    let team_name = state.get_team_name(&maybe_id).cloned();
     let mut rows = Vec::new();
     for team_session in state.sessions.values() {
         let score = team_session.session.total_score();
@@ -20,5 +25,5 @@ pub fn handle(state: &State, response: oneshot::Sender<Vec<LeaderboardRow>>) {
         rows.push(row);
     }
     rows.sort_by_key(|r| -r.score);
-    response.send(rows).ok();
+    response.send((rows, team_name)).ok();
 }
