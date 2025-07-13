@@ -1,7 +1,10 @@
 use {
     crate::{
         RouteState,
-        state::{TeamName, command::Command},
+        state::{
+            TeamName,
+            command::{Command, Either},
+        },
     },
     axum::{
         extract::{Path, State},
@@ -36,8 +39,11 @@ where
     };
     route_state.sender.send(command).await?;
     let (team_name, maybe_clue) = rx.await??;
-    let Some(clue_view) = maybe_clue else {
-        return Ok(no_more_clues());
+    let clue_view = match maybe_clue {
+        Either::Left(clue_view) => clue_view,
+        Either::Right(score) => {
+            return Ok(no_more_clues(session_id, team_name, score));
+        }
     };
 
     // If the current clue does not match the one the hint was
@@ -66,8 +72,11 @@ pub async fn form(State(route_state): State<RouteState>, Path(id): Path<String>)
         };
         sender.send(command).await?;
         let (team_name, maybe_clue) = rx.await??;
-        let Some(clue_view) = maybe_clue else {
-            return Ok(no_more_clues());
+        let clue_view = match maybe_clue {
+            Either::Left(clue_view) => clue_view,
+            Either::Right(score) => {
+                return Ok(no_more_clues(session_id, team_name, score));
+            }
         };
         Ok(construct_clues_form(session_id, team_name, clue_view))
     }
@@ -128,8 +137,15 @@ pub fn construct_clues_form(
     super::fill_body(&html_body, Some(team_data))
 }
 
-pub fn no_more_clues() -> Html<String> {
-    Html("TODO: All done page".into())
+pub fn no_more_clues(session_id: SessionId, team_name: TeamName, score: i32) -> Html<String> {
+    let team_data = super::TeamData {
+        team_name,
+        session_id,
+    };
+    let content = include_str!("../../html/complete.html")
+        .replace("${{SCORE}}", &score.to_string())
+        .replace("${{TEAM_NAME}}", &team_data.team_name.to_string());
+    super::fill_body(&content, Some(team_data))
 }
 
 #[test]

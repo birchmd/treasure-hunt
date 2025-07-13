@@ -1,5 +1,8 @@
 use {
-    crate::state::{State, TeamName},
+    crate::state::{
+        State, TeamName,
+        command::{ClueOrScore, Either},
+    },
     std::fmt,
     tokio::sync::oneshot,
     treasure_hunt_core::{clues::ClueView, session::SessionId},
@@ -21,7 +24,7 @@ impl std::error::Error for CurrentClueError {}
 pub fn handle(
     state: &mut State,
     id: &SessionId,
-    response: oneshot::Sender<Result<(TeamName, Option<ClueView>), CurrentClueError>>,
+    response: oneshot::Sender<Result<(TeamName, ClueOrScore), CurrentClueError>>,
 ) {
     response.send(inner(state, id)).ok();
 }
@@ -29,11 +32,14 @@ pub fn handle(
 fn inner(
     state: &mut State,
     id: &SessionId,
-) -> Result<(TeamName, Option<ClueView>), CurrentClueError> {
+) -> Result<(TeamName, Either<ClueView, i32>), CurrentClueError> {
     let team_session = state
         .sessions
         .get_mut(id)
         .ok_or(CurrentClueError::UnknownSessionId)?;
-    let current_clue = team_session.session.current_clue();
-    Ok((team_session.name.clone(), current_clue))
+    let result = team_session.session.current_clue().map_or_else(
+        || Either::Right(team_session.session.total_score()),
+        Either::Left,
+    );
+    Ok((team_session.name.clone(), result))
 }

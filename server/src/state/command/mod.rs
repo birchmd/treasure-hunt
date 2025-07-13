@@ -13,6 +13,8 @@ pub mod hint;
 pub mod leader_board;
 pub mod new_session;
 
+pub type ClueOrScore = Either<ClueView, i32>;
+
 /// Commands the app can send to the state
 #[derive(Debug)]
 pub enum Command {
@@ -22,7 +24,7 @@ pub enum Command {
     },
     GetCurrentClue {
         id: SessionId,
-        response: oneshot::Sender<Result<(TeamName, Option<ClueView>), CurrentClueError>>,
+        response: oneshot::Sender<Result<(TeamName, ClueOrScore), CurrentClueError>>,
     },
     HintCurrentClue {
         id: SessionId,
@@ -42,4 +44,10 @@ pub enum Command {
         maybe_id: String,
         response: oneshot::Sender<(Vec<LeaderboardRow>, Option<TeamName>)>,
     },
+}
+
+#[derive(Debug)]
+pub enum Either<L, R> {
+    Left(L),
+    Right(R),
 }
