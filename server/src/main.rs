@@ -41,7 +41,6 @@ async fn main() {
         config: Arc::new(config),
     };
 
-    // TODO: routes for login and about
     let app = Router::new()
         .route(
             "/",
@@ -51,6 +50,7 @@ async fn main() {
         .route("/login", post(routes::login::action))
         .route("/leaderboard/{id}", get(routes::leaderboard::action))
         .route("/clue/{id}", get(routes::clues::form))
+        .route("/about/{id}", get(routes::about::action))
         .route(
             "/hint/{session_id}/{clue_id}",
             post(routes::hint::hint_action),

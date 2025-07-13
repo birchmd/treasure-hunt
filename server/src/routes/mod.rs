@@ -3,6 +3,7 @@ use {
     treasure_hunt_core::session::SessionId,
 };
 
+pub mod about;
 pub mod answer;
 pub mod clues;
 pub mod hint;

@@ -1,0 +1,28 @@
+<h1>Lynne and Michael's Treasure Hunt</h1>
+
+<h2>Overview</h2>
+<p>This is a game in which your goal is to find certain objects around our home.</p>
+<p>You will figure out which objects to find (and sometimes also where they might be located) by solving rhyming clues.</p>
+<p>If you get stuck then you can ask for a hint.</p>
+<p>If you still can't figure it out with the hint then you can ask for what item you are looking for to be revealed ("scavenger hunt mode").</p>
+<p>Independent of hints, you can also skip a clue to come back to it later. The details of skipping are given below.</p>
+<p>You will earn points depending on how quickly you find the answer and how much help you ask for. The details of scoring are presented below.</p>
+
+<h2>Skipping</h2>
+<p>The rules for skipping are as follows:</p>
+<ul>
+    <li>Each clue can be skipped one time</li>
+    <li>You must spend at least ${{MIN_SKIP_DURATION}} working on a clue before skipping</li>
+    <li>You will not return to a skipped clue until you have seen all other clues</li>
+    <li>If you skip a clue a second time then you will not see it again and earn 0 points for that clue</li>
+</ul>
+
+<h2>Scoring</h2>
+<p>Scoring is determined as follows:</p>
+<ul>
+    <li>300 points for solving a clue <em>without</em> any hint</li>
+    <li>200 points for solving a clue with using the hint</li>
+    <li>100 points for solving a clue in scavenger hunt mode</li>
+</ul>
+<p>Bonus points are given based on time. Up to 100 bonus points are available per clue, subject to an exponential decay with a half life of 10 minutes.</p>
+<p>For example: Suppose a team is able to solve a clue in 7 minutes using a hint, then they receive 262 points (200 from solving with a hint pluse 62 for solving in 7 minutes).</p>
