@@ -18,7 +18,7 @@ impl fmt::Display for NewSessionError {
 
 impl std::error::Error for NewSessionError {}
 
-pub fn handle(
+pub async fn handle(
     state: &mut State,
     team_name: TeamName,
     response: oneshot::Sender<Result<SessionId, NewSessionError>>,
@@ -36,4 +36,5 @@ pub fn handle(
     state
         .sessions
         .insert(id, TeamSession::new(team_name, session));
+    state.writer.send(state.serialize()).await.ok();
 }

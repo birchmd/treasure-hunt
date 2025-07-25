@@ -21,12 +21,13 @@ impl fmt::Display for CurrentClueError {
 
 impl std::error::Error for CurrentClueError {}
 
-pub fn handle(
+pub async fn handle(
     state: &mut State,
     id: &SessionId,
     response: oneshot::Sender<Result<(TeamName, ClueOrScore), CurrentClueError>>,
 ) {
     response.send(inner(state, id)).ok();
+    state.writer.send(state.serialize()).await.ok();
 }
 
 fn inner(

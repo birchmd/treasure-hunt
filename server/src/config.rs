@@ -12,6 +12,7 @@ pub struct Config {
     pub min_reveal_seconds: u64,
     pub min_skip_seconds: u64,
     pub state_channel_size: usize,
+    pub state_persist_path: String,
 }
 
 impl Config {

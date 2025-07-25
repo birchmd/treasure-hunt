@@ -17,6 +17,8 @@ use {
 };
 
 pub mod command;
+mod serialization;
+pub mod writer;
 
 pub struct TeamSession {
     pub name: TeamName,
@@ -33,22 +35,32 @@ pub struct State {
     sessions: HashMap<SessionId, TeamSession>,
     team_names: HashSet<TeamName>,
     channel: mpsc::Receiver<Command>,
+    writer: mpsc::Sender<Result<String, serde_json::Error>>,
     clues: CluesGenerator,
 }
 
 impl State {
-    pub fn new(config: &Config) -> io::Result<(Self, mpsc::Sender<Command>)> {
+    pub fn new(config: &Config) -> io::Result<(Self, mpsc::Sender<Command>, writer::StateWriter)> {
         let path = Path::new(&config.clues_path);
         let clues = Clues::from_disk(path)?;
         let iterator = Arrangements::new(clues).iterator();
         let (sender, channel) = mpsc::channel(config.state_channel_size);
+        let (writer_tx, writer_rx) = mpsc::channel(config.state_channel_size);
+        let state_writer = writer::StateWriter::new(config, writer_rx);
+        let (sessions, team_names) = Self::load_persisted_state(config).unwrap_or_default();
         let state = Self {
-            sessions: HashMap::new(),
-            team_names: HashSet::new(),
+            sessions,
+            team_names,
             channel,
+            writer: writer_tx,
             clues: iterator,
         };
-        Ok((state, sender))
+        Ok((state, sender, state_writer))
+    }
+
+    pub fn serialize(&self) -> Result<String, serde_json::Error> {
+        let serializable = serialization::SerializableState::try_from(self)?;
+        serde_json::to_string_pretty(&serializable)
     }
 
     pub fn get_team_name(&self, maybe_id: &str) -> Option<&TeamName> {
@@ -64,21 +76,23 @@ impl State {
                     Command::NewSession {
                         team_name,
                         response,
-                    } => command::new_session::handle(&mut self, team_name, response),
+                    } => command::new_session::handle(&mut self, team_name, response).await,
                     Command::GetCurrentClue { id, response } => {
-                        command::current_clue::handle(&mut self, &id, response)
+                        command::current_clue::handle(&mut self, &id, response).await
                     }
-                    Command::HintCurrentClue { id } => command::hint::handle_hint(&mut self, &id),
+                    Command::HintCurrentClue { id } => {
+                        command::hint::handle_hint(&mut self, &id).await
+                    }
                     Command::RevealCurrentItem { id } => {
-                        command::hint::handle_reveal(&mut self, &id)
+                        command::hint::handle_reveal(&mut self, &id).await
                     }
-                    Command::SkipClue { id } => command::hint::handle_skip(&mut self, &id),
+                    Command::SkipClue { id } => command::hint::handle_skip(&mut self, &id).await,
                     Command::AnswerCurrentClue {
                         id,
                         guess,
                         response,
                     } => {
-                        command::answer::handle(&mut self, &id, &guess, response);
+                        command::answer::handle(&mut self, &id, &guess, response).await;
                     }
                     Command::Leaderboard { maybe_id, response } => {
                         command::leader_board::handle(&self, maybe_id, response);
@@ -86,6 +100,19 @@ impl State {
                 }
             }
         })
+    }
+
+    fn load_persisted_state(
+        config: &Config,
+    ) -> Option<(HashMap<SessionId, TeamSession>, HashSet<TeamName>)> {
+        let contents = std::fs::read_to_string(Path::new(&config.state_persist_path)).ok()?;
+        let state: serialization::SerializableState<'static> =
+            serde_json::from_str(&contents).ok()?;
+        let result = state.convert();
+        if let Some((_, names)) = &result {
+            tracing::info!("Loaded previous state including team names: {names:?}");
+        }
+        result
     }
 }
 

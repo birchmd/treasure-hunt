@@ -1,3 +1,4 @@
 /target
 config.json
 server/assets/clues.json
+server/assets/state.json

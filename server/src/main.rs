@@ -32,9 +32,10 @@ async fn main() {
         serde_json::to_string(&config).unwrap()
     );
 
-    let (state, sender) = state::State::new(&config).unwrap();
+    let (state, sender, state_writer) = state::State::new(&config).unwrap();
 
     let state_task = state.spawn();
+    let writer_task = state_writer.spawn();
     let bind_url = format!("0.0.0.0:{}", config.port);
     let route_state = RouteState {
         sender,
@@ -68,6 +69,7 @@ async fn main() {
     let listener = tokio::net::TcpListener::bind(bind_url).await.unwrap();
     axum::serve(listener, app).await.unwrap();
     state_task.await.unwrap();
+    writer_task.await.unwrap();
 }
 
 #[derive(Debug, Clone)]
