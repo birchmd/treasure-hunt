@@ -1,4 +1,5 @@
 use {
+    self::serialization::SerializableSession,
     crate::clues::{
         self, Clue, ClueView, Clues,
         status::{CurrentClueStatus, KnowledgeKind, Status},
@@ -7,9 +8,11 @@ use {
 };
 
 mod id;
+mod serialization;
 
 pub use id::SessionId;
 
+#[derive(Debug, PartialEq, Eq)]
 pub struct Session {
     pub id: SessionId,
     clues: Vec<(Clue, Status)>,
@@ -27,6 +30,16 @@ impl Session {
                 .collect(),
             negative_points: 0,
         }
+    }
+
+    pub fn to_json(&self) -> Result<serde_json::Value, serde_json::Error> {
+        let serializable = SerializableSession::from(self);
+        serde_json::to_value(serializable)
+    }
+
+    pub fn from_json(value: serde_json::Value) -> Result<Self, serde_json::Error> {
+        let serializable: SerializableSession<'static> = serde_json::from_value(value)?;
+        Ok(serializable.into())
     }
 
     pub fn total_score(&self) -> i32 {
