@@ -1,7 +1,7 @@
 use {
     self::status::KnowledgeKind,
     sha3::{Digest, Sha3_256},
-    std::{io, path::Path, time::Duration},
+    std::{fmt, io, path::Path, time::Duration},
 };
 
 pub mod arrangement;
@@ -74,11 +74,33 @@ impl Clues {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ClueIndex {
+    pub index: u8,
+    pub total: u8,
+}
+
+impl ClueIndex {
+    pub fn new(index: usize, total: usize) -> Self {
+        Self {
+            index: index as u8,
+            total: total as u8,
+        }
+    }
+}
+
+impl fmt::Display for ClueIndex {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{} of {}", self.index + 1, self.total)
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ClueView {
     pub clue: Clue,
     pub knowledge: KnowledgeKind,
     pub is_previously_skipped: bool,
     pub duration: Duration,
+    pub index: ClueIndex,
 }
 
 impl ClueView {
@@ -87,12 +109,14 @@ impl ClueView {
         knowledge: KnowledgeKind,
         is_previously_skipped: bool,
         duration: Duration,
+        index: ClueIndex,
     ) -> Self {
         Self {
             clue,
             knowledge,
             is_previously_skipped,
             duration,
+            index,
         }
     }
 

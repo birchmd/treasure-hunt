@@ -1,7 +1,7 @@
 use {
     self::serialization::SerializableSession,
     crate::clues::{
-        self, Clue, ClueView, Clues,
+        self, Clue, ClueIndex, ClueView, Clues,
         status::{CurrentClueStatus, KnowledgeKind, Status},
     },
     std::time::{Duration, Instant},
@@ -51,12 +51,12 @@ impl Session {
     }
 
     pub fn current_clue_duration(&mut self) -> Option<Duration> {
-        let (_, status) = self.inner_current_clue()?;
+        let (_, status, _) = self.inner_current_clue()?;
         Some(status.duration())
     }
 
     pub fn current_clue(&mut self) -> Option<ClueView> {
-        let (clue, status) = self.inner_current_clue()?;
+        let (clue, status, index) = self.inner_current_clue()?;
         let is_previously_skipped = status.is_skipped();
         let duration = status.duration();
         let view = ClueView {
@@ -64,13 +64,14 @@ impl Session {
             knowledge: status.get_knowledge_kind(),
             is_previously_skipped,
             duration,
+            index,
         };
         Some(view)
     }
 
     pub fn try_solve(&mut self, submitted_answer: &str) -> Option<i32> {
         let submitted_code = clues::answer_to_code(submitted_answer);
-        let (clue, status) = self.inner_current_clue()?;
+        let (clue, status, _) = self.inner_current_clue()?;
 
         if clue.code == submitted_code {
             // They got it right!
@@ -93,32 +94,40 @@ impl Session {
     }
 
     pub fn skip_current_clue(&mut self) {
-        let Some((_, status)) = self.inner_current_clue() else {
+        let Some((_, status, _)) = self.inner_current_clue() else {
             return;
         };
         status.skip();
     }
 
     pub fn hint_current_clue(&mut self) -> Option<String> {
-        let (clue, mut status) = self.inner_current_clue()?;
+        let (clue, mut status, _) = self.inner_current_clue()?;
         status.hinted();
         Some(clue.hint.clone())
     }
 
     pub fn reveal_current_item(&mut self) -> Option<String> {
-        let (clue, mut status) = self.inner_current_clue()?;
+        let (clue, mut status, _) = self.inner_current_clue()?;
         status.revealed();
         Some(clue.item.clone())
     }
 
-    fn inner_current_clue<'a>(&'a mut self) -> Option<(&'a mut Clue, CurrentClueStatus<'a>)> {
-        let mut first_skipped_clue: Option<(&'a mut Clue, CurrentClueStatus<'a>)> = None;
+    fn inner_current_clue<'a>(
+        &'a mut self,
+    ) -> Option<(&'a mut Clue, CurrentClueStatus<'a>, ClueIndex)> {
+        let total = self.clues.len();
+        let make_index = |index| ClueIndex::new(index, total);
+        let mut first_skipped_clue: Option<(&'a mut Clue, CurrentClueStatus<'a>, ClueIndex)> = None;
 
         // First pass: look for current clue (Seen) or next new clue (Unread).
-        for (clue, status) in self.clues.iter_mut() {
+        for (index, (clue, status)) in self.clues.iter_mut().enumerate() {
             match status {
                 Status::Seen { .. } => {
-                    return Some((clue, CurrentClueStatus::new(status).unwrap()));
+                    return Some((
+                        clue,
+                        CurrentClueStatus::new(status).unwrap(),
+                        make_index(index),
+                    ));
                 }
                 Status::Unread => {
                     // Set clue as being seen
@@ -126,10 +135,18 @@ impl Session {
                         kind: KnowledgeKind::Unaided,
                         time: Instant::now(),
                     };
-                    return Some((clue, CurrentClueStatus::new(status).unwrap()));
+                    return Some((
+                        clue,
+                        CurrentClueStatus::new(status).unwrap(),
+                        make_index(index),
+                    ));
                 }
                 Status::Skipped { .. } if first_skipped_clue.is_none() => {
-                    first_skipped_clue = Some((clue, CurrentClueStatus::new(status).unwrap()));
+                    first_skipped_clue = Some((
+                        clue,
+                        CurrentClueStatus::new(status).unwrap(),
+                        make_index(index),
+                    ));
                 }
                 _ => continue,
             }

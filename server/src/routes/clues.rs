@@ -104,7 +104,10 @@ pub fn construct_clues_form(
         "Skip for now"
     };
 
-    let mut html_body = format!("<p>{}</p><br><br>\n", clue.poem);
+    let mut html_body = format!(
+        "<h2>Clue {}</h2>\n<p>{}</p><br><br>\n",
+        clue_view.index, clue.poem
+    );
 
     if matches!(
         knowledge,
@@ -154,7 +157,8 @@ fn test_construct_clues_form() {
     let session_id = SessionId::random();
     let clue = treasure_hunt_core::clues::Clue::mock(1, "A");
     let duration = std::time::Duration::from_secs(0);
-    let mut clue_view = ClueView::new(clue, KnowledgeKind::Unaided, false, duration);
+    let index = treasure_hunt_core::clues::ClueIndex { index: 0, total: 1 };
+    let mut clue_view = ClueView::new(clue, KnowledgeKind::Unaided, false, duration, index);
 
     let text = construct_clues_form(session_id, team_name.clone(), clue_view.clone()).0;
     assert!(
