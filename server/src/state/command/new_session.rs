@@ -28,7 +28,16 @@ pub async fn handle(
         return;
     }
     let clues = state.clues.next().expect("The iterator is never empty");
-    let session = Session::new(clues);
+    let session = {
+        let mut init = Session::new(clues);
+        // Prevent randomly overwriting an existing session
+        // by generating new ids until we get one not in the state.
+        while state.sessions.contains_key(&init.id) {
+            tracing::warn!("Session ID collision: {}", init.id);
+            init.id = SessionId::random();
+        }
+        init
+    };
     let id = session.id;
     response.send(Ok(id)).ok();
     tracing::info!("Added new session. TeamName={team_name} SessionId={id}");
