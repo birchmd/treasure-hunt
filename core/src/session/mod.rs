@@ -59,13 +59,13 @@ impl Session {
         let (clue, status, index) = self.inner_current_clue()?;
         let is_previously_skipped = status.is_skipped();
         let duration = status.duration();
-        let view = ClueView {
-            clue: clue.clone(),
-            knowledge: status.get_knowledge_kind(),
+        let view = ClueView::new(
+            clue.clone(),
+            status.get_knowledge_kind(),
             is_previously_skipped,
             duration,
             index,
-        };
+        );
         Some(view)
     }
 

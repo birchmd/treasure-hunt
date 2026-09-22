@@ -109,6 +109,19 @@ pub fn construct_clues_form(
         clue_view.index, clue.poem
     );
 
+    if let Some(js_timer) = &clue_view.include_js_timer {
+        html_body.push_str("<p id=\"countdown\"></p><br><br>\n");
+        let no_script = format!(
+            "<noscript><p>{} Wait {} (enable JS for live countdown)</p></noscript>\n\n",
+            js_timer.msg,
+            super::format_duration(js_timer.duration)
+        );
+        let script = super::countdown_function(js_timer.msg, js_timer.duration);
+        html_body.push_str(&no_script);
+        html_body.push_str(&script);
+        html_body.push('\n');
+    }
+
     if matches!(
         knowledge,
         KnowledgeKind::WithHint | KnowledgeKind::KnowingItem

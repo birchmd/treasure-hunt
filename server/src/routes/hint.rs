@@ -52,10 +52,10 @@ async fn update_with_hint(
     let min_hint_duration = Duration::from_secs(route_state.config.min_hint_seconds);
     if clue_view.duration < min_hint_duration {
         let time_to_hint = min_hint_duration.saturating_sub(clue_view.duration);
-        clue_view.clue.poem.push_str(&format!(
-            "<br><br>Wait at least {} for a hint.",
-            super::format_duration(time_to_hint)
-        ));
+        clue_view.with_timer(
+            "Think about the clue a little longer before obtaining a hint:",
+            time_to_hint,
+        );
         return Ok(construct_clues_form(session_id, team_name, clue_view));
     }
 
@@ -87,10 +87,10 @@ async fn update_with_item(
     let min_reveal_duration = Duration::from_secs(route_state.config.min_reveal_seconds);
     if clue_view.duration < min_reveal_duration {
         let time_to_hint = min_reveal_duration.saturating_sub(clue_view.duration);
-        clue_view.clue.hint.push_str(&format!(
-            "<br><br>Wait at least {} for revealing the item.",
-            super::format_duration(time_to_hint)
-        ));
+        clue_view.with_timer(
+            "Keep trying to figure it out for a little longer before revealing the item:",
+            time_to_hint,
+        );
         return Ok(construct_clues_form(session_id, team_name, clue_view));
     }
 

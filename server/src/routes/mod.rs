@@ -15,6 +15,46 @@ pub mod skip;
 const BODY_PLACEHOLDER: &str = "${{BODY}}";
 const SESSION_ID_PLACEHOLDER: &str = "${{SESSION_ID}}";
 const LOGIN_PLACEHOLDER: &str = "${{LOGIN_SECTION}}";
+const COUTNDOWN_START_PLACEHOLDER: &str = "${{COUNTDOWN_START}}";
+const COUTNDOWN_MSG_PLACEHOLDER: &str = "${{COUNTDOWN_MSG}}";
+const JS_COUNTDOWN: &str = r#"<script>
+  const COUNTDOWN_START_SECONDS = ${{COUNTDOWN_START}};
+
+  const countdownEl = document.getElementById('countdown');
+
+  // Compute a fixed end time once, based on when the page loaded
+  const endTime = Date.now() + COUNTDOWN_START_SECONDS * 1000;
+
+  function formatTime(totalSeconds) {
+    const mins = Math.floor(totalSeconds / 60);
+    const secs = totalSeconds % 60;
+    return String(mins).padStart(2, '0') + ':' + String(secs).padStart(2, '0');
+  }
+
+  let timerId;
+
+  function tick() {
+    const remainingMs = endTime - Date.now();
+    const remainingSeconds = Math.max(Math.ceil(remainingMs / 1000), 0);
+
+    countdownEl.textContent = '${{COUNTDOWN_MSG}} ' + formatTime(remainingSeconds);
+
+    if (remainingSeconds <= 0) {
+      clearInterval(timerId);
+    }
+  }
+
+  tick(); // render immediately
+  timerId = setInterval(tick, 1000);
+
+  // Re-sync immediately when the page becomes visible again
+  // (covers the case where setInterval was throttled/paused while hidden)
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      tick();
+    }
+  });
+</script>"#;
 
 #[derive(Debug)]
 pub struct TeamData {
@@ -80,4 +120,10 @@ fn format_duration(duration: Duration) -> String {
             minutes => format!("{} minutes", minutes),
         },
     }
+}
+
+fn countdown_function(msg: &str, duration: Duration) -> String {
+    JS_COUNTDOWN
+        .replace(COUTNDOWN_START_PLACEHOLDER, &duration.as_secs().to_string())
+        .replace(COUTNDOWN_MSG_PLACEHOLDER, msg)
 }

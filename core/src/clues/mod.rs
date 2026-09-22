@@ -101,6 +101,7 @@ pub struct ClueView {
     pub is_previously_skipped: bool,
     pub duration: Duration,
     pub index: ClueIndex,
+    pub include_js_timer: Option<JsTimerInfo>,
 }
 
 impl ClueView {
@@ -117,6 +118,7 @@ impl ClueView {
             is_previously_skipped,
             duration,
             index,
+            include_js_timer: None,
         }
     }
 
@@ -131,6 +133,16 @@ impl ClueView {
             self.knowledge = KnowledgeKind::KnowingItem;
         }
     }
+
+    pub fn with_timer(&mut self, msg: &'static str, duration: Duration) {
+        self.include_js_timer = Some(JsTimerInfo { msg, duration });
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct JsTimerInfo {
+    pub msg: &'static str,
+    pub duration: Duration,
 }
 
 pub fn answer_to_code(answer: &str) -> [u8; 32] {

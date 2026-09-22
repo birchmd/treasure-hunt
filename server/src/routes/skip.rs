@@ -31,10 +31,10 @@ async fn do_skip(
     let min_skip_duration = Duration::from_secs(route_state.config.min_skip_seconds);
     if clue_view.duration < min_skip_duration {
         let time_to_hint = min_skip_duration.saturating_sub(clue_view.duration);
-        clue_view.clue.poem.push_str(&format!(
-            "<br><br>Don't give up yet! Wait at least {} before you can skip.",
-            super::format_duration(time_to_hint)
-        ));
+        clue_view.with_timer(
+            "Don\\'t give up yet! Wait a little longer before you skip:",
+            time_to_hint,
+        );
         return Ok(construct_clues_form(session_id, team_name, clue_view));
     }
 
